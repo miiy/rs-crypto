@@ -21,9 +21,13 @@ type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 /// assert_eq!(hex_cipher_text, "9834ed518cbc8fbe9af3c6ecb75eb8c0");
 /// ```
 pub fn encrypt(plain_text: &str, key: [u8; 16], iv: [u8; 16]) -> Result<Vec<u8>, CryptoError> {
-    let mut buf = [0u8; 48];
     let pt_len = plain_text.len();
-    buf[..pt_len].copy_from_slice(&plain_text.as_bytes());
+    let block_size = 16;
+    let padding_size = block_size - pt_len % block_size;
+
+    let buf_len = pt_len + padding_size;
+    let mut buf = vec![0u8; buf_len];
+    buf[..pt_len].copy_from_slice(plain_text.as_bytes());
 
     let ct = Aes128CbcEnc::new(&key.into(), &iv.into())
         .encrypt_padded_mut::<Pkcs7>(&mut buf, pt_len)
