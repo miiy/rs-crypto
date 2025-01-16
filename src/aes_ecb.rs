@@ -2,7 +2,7 @@
 ///
 /// https://github.com/magic-akari/ecb
 use super::error::CryptoError;
-use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, BlockEncryptMut, KeyInit};
+use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, BlockEncryptMut, KeyInit, BlockSizeUser};
 
 type Aes128EcbEnc = ecb::Encryptor<aes::Aes128>;
 type Aes128EcbDec = ecb::Decryptor<aes::Aes128>;
@@ -21,7 +21,7 @@ type Aes128EcbDec = ecb::Decryptor<aes::Aes128>;
 /// ```
 pub fn encrypt(plain_text: &str, key: [u8; 16]) -> Result<Vec<u8>, CryptoError> {
     let pt_len = plain_text.len();
-    let block_size = 16;
+    let block_size = Aes128EcbEnc::block_size();
     let padding_size = (block_size - (pt_len % block_size)) % block_size;
 
     let buf_len = pt_len + padding_size;

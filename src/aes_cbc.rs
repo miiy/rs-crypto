@@ -2,7 +2,8 @@
 ///
 /// https://github.com/RustCrypto/block-modes/tree/master/cbc
 use super::error::CryptoError;
-use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, BlockEncryptMut, KeyIvInit};
+use rand::Rng;
+use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, BlockEncryptMut, KeyIvInit, BlockSizeUser};
 
 type Aes128CbcEnc = cbc::Encryptor<aes::Aes128>;
 type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
@@ -22,7 +23,7 @@ type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
 /// ```
 pub fn encrypt(plain_text: &str, key: [u8; 16], iv: [u8; 16]) -> Result<Vec<u8>, CryptoError> {
     let pt_len = plain_text.len();
-    let block_size = 16;
+    let block_size = Aes128CbcEnc::block_size();
     let padding_size = block_size - pt_len % block_size;
 
     let buf_len = pt_len + padding_size;
@@ -59,6 +60,21 @@ pub fn decrypt(cipher_text: Vec<u8>, key: [u8; 16], iv: [u8; 16]) -> Result<Vec<
     Ok(pt.to_vec())
 }
 
+/// Generate a random IV
+///
+/// Example:
+/// ```
+/// use rs_crypto::aes_cbc;
+///
+/// let iv = aes_cbc::generate_iv();
+/// println!("{:?}", iv);
+/// ```
+pub fn generate_iv() -> [u8; 16] {
+    let mut rng = rand::thread_rng();
+    let iv: [u8; 16] = rng.gen();
+    iv
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -91,5 +107,11 @@ mod tests {
         let decrypted = decrypt(cipher_text, KEY, IV).unwrap();
 
         assert_eq!(PLAIN_TEXT.as_bytes(), decrypted.as_slice());
+    }
+
+    #[test]
+    fn test_aes_cbc_generate_iv() {
+        let iv = generate_iv();
+        println!("{:?}", iv);
     }
 }
